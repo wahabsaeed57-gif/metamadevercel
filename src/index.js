@@ -14,6 +14,8 @@ connectDb()
     app.listen(PORT,"0.0.0.0", () => {
       console.log(`Server is running on port ${PORT}`);
     });
+    console.log("EMAIL_USER:", process.env.EMAIL_USER);
+    console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "OK" : "MISSING");
   })
   .catch((error) => {
     console.log("monogo db connection is failed ", error);

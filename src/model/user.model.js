@@ -54,6 +54,12 @@ const userSchema = new mongoose.Schema(
       },
       zipCode: String,
     },
+    isOtpVerified: {
+      type: Boolean,
+      default: false,
+    },
+    otpCode: String,
+    otpExpire: Date,
   },
   { timestamps: true },
 );

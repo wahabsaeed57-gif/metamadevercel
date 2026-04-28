@@ -1,5 +1,8 @@
 import { User } from "../model/user.model.js";
 import crypto from "crypto";
+import { sendEmail } from "../utils/nodemailer.js";
+import { generateOtp } from "../utils/otpGenerator.js";
+import { otpTemplate } from "../utils/template.js";
 
 export const registerUser = async (req, res) => {
   try {
@@ -134,10 +137,17 @@ export const logoutUser = async (req, res) => {
     });
 };
 
-// ================= FORGOT PASSWORD =================
-export const forgetPassword = async (req, res) => {
+
+
+export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        message: "Email is required",
+      });
+    }
 
     const user = await User.findOne({ email });
 
@@ -147,18 +157,22 @@ export const forgetPassword = async (req, res) => {
       });
     }
 
-    const resetToken = user.generateResetToken();
+    const otp = generateOtp();
+
+    user.otpCode = otp;
+    user.otpExpire = Date.now() + 5 * 60 * 1000;
 
     await user.save({ validateBeforeSave: false });
 
-    const resetUrl = `http://localhost:3000/reset-password/${resetToken}`;
-
-    console.log("Reset URL:", resetUrl);
+    await sendEmail({
+      to: user.email,
+      subject: "Password Reset OTP",
+      html: otpTemplate(otp),
+    });
 
     return res.status(200).json({
       success: true,
-      message: "Reset link generated",
-      resetUrl,
+      message: "OTP sent to email",
     });
   } catch (error) {
     return res.status(500).json({
@@ -167,42 +181,50 @@ export const forgetPassword = async (req, res) => {
     });
   }
 };
-
-// ================= RESET PASSWORD =================
-export const resetPassword = async (req, res) => {
+export const verifyOtp = async (req, res) => {
   try {
-    const { token } = req.body;
-    const { password, confirmPassword } = req.body;
+    const { email, otp } = req.body;
 
-    if (!password || !confirmPassword) {
+    const user = await User.findOne({
+      email,
+      otpCode: otp,
+      otpExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
       return res.status(400).json({
-        message: "All fields are required",
+        message: "Invalid or expired OTP",
       });
     }
 
-    if (password !== confirmPassword) {
+    return res.status(200).json({
+      success: true,
+      message: "OTP verified",
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, newPassword, confirmPassword } = req.body;
+
+    if (newPassword !== confirmPassword) {
       return res.status(400).json({
         message: "Passwords do not match",
       });
     }
 
-    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
-    const user = await User.findOne({
-      resetPasswordToken: hashedToken,
-      resetPasswordExpire: { $gt: Date.now() },
-    });
+    const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(400).json({
-        message: "Token is invalid or expired",
-      });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    user.password = password;
-    user.confirmPassword = confirmPassword; // ✅ needed for schema validation
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
+    user.password = newPassword;
+    user.otpCode = undefined;
+    user.otpExpire = undefined;
 
     await user.save();
 
@@ -211,9 +233,6 @@ export const resetPassword = async (req, res) => {
       message: "Password reset successful",
     });
   } catch (error) {
-    return res.status(500).json({
-      message: "Server error",
-      error: error.message,
-    });
+    return res.status(500).json({ message: error.message });
   }
 };
