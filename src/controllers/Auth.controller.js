@@ -29,7 +29,7 @@ export const registerUser = async (req, res) => {
     }
 
     const user = await User.create({
-      name, 
+      name,
       email,
       password,
       confirmPassword,
@@ -137,8 +137,6 @@ export const logoutUser = async (req, res) => {
     });
 };
 
-
-
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -205,10 +203,9 @@ export const verifyOtp = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
-
 export const resetPassword = async (req, res) => {
   try {
-    const { email, newPassword, confirmPassword } = req.body;
+    const { newPassword, confirmPassword } = req.body;
 
     if (newPassword !== confirmPassword) {
       return res.status(400).json({
@@ -216,15 +213,16 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ resetAllowed: true });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(401).json({
+        message: "OTP not verified or session expired",
+      });
     }
 
     user.password = newPassword;
-    user.otpCode = undefined;
-    user.otpExpire = undefined;
+    user.resetAllowed = false;
 
     await user.save();
 
