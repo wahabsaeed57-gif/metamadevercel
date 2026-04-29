@@ -5,7 +5,9 @@ import {
   getDoctorById,
   updateDoctor,
   deleteDoctor,
+  updateDoctorProfile,
 } from "../controllers/doctor.controller.js";
+import {verifyJwt} from "../middleware/auth.middleware.js"
 
 import { upload } from "../middleware/multer_middleware.js";
 
@@ -17,7 +19,13 @@ router.post("/create", upload.single("image"), createDoctor);
 
 router.get("/get-doctors", getallDoctors);
 
-
+ 
+router.post(
+  "/update",
+  verifyJwt,
+  upload.single("image"), // 🔥 THIS IS MISSING
+  updateDoctorProfile,
+);
 // router.get("/:id", getDoctorById);
 
 

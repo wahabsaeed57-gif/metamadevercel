@@ -3,6 +3,8 @@ import crypto from "crypto";
 import { sendEmail } from "../utils/nodemailer.js";
 import { generateOtp } from "../utils/otpGenerator.js";
 import { otpTemplate } from "../utils/template.js";
+import { Doctor } from "../model/doctor.model.js";
+import { uploadCloudinary } from "../utils/cloudinary.js";
 
 export const registerUser = async (req, res) => {
   try {
@@ -28,13 +30,29 @@ export const registerUser = async (req, res) => {
       });
     }
 
+    // 🔥 IMAGE UPLOAD (optional)
+    
+
+    // 🔥 CREATE USER
     const user = await User.create({
       name,
       email,
       password,
       confirmPassword,
       role,
+
     });
+
+    // 🔥 AUTO CREATE DOCTOR PROFILE
+    if (role === "doctor") {
+      await Doctor.create({
+        user: user._id,
+        specialty: "",
+        experience: "",
+        fee: "",
+        hospital: "",
+      });
+    }
 
     const createdUser = await User.findById(user._id).select(
       "-password -refreshToken",

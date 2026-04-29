@@ -1,6 +1,6 @@
-// src/middleware/multer.js
 import multer from "multer";
 
+// storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "./public/temp");
@@ -11,6 +11,26 @@ const storage = multer.diskStorage({
   },
 });
 
+// 🔥 strict file filter
+const fileFilter = (req, file, cb) => {
+  const allowedMimeTypes = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "image/jfif",
+    "image/heic",
+  ];
+
+  if (allowedMimeTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    console.log("REJECTED MIME:", file.mimetype);
+    cb(new Error(`Unsupported file type: ${file.mimetype}`), false);
+  }
+};
+
+// upload config
 export const upload = multer({
   storage,
 
@@ -18,11 +38,5 @@ export const upload = multer({
     fileSize: 2 * 1024 * 1024, // 2MB
   },
 
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image")) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only image files allowed"), false);
-    }
-  },
+  fileFilter,
 });

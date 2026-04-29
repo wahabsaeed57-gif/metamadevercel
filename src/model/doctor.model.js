@@ -7,37 +7,26 @@ const doctorSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-
     specialty: {
       type: String,
-      required: true,
+      default: "",
     },
 
     hospital: {
       type: String,
-      required: true,
-    },
-
-    rating: {
-      type: Number,
-      default: 0,
+      default: "",
     },
 
     fee: {
       type: String,
-      required: true,
-    },
-
-    address: {
-      type: String,
+      default: "",
     },
 
     experience: {
       type: String,
-      required: true,
+      default: "",
     },
-
-    image: {
+    profileImage: {
       type: String,
       default: "",
     },

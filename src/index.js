@@ -1,11 +1,14 @@
 import connectDb from "./db/db.js";
 import app from "./app.js";
 import dotenv from "dotenv";
+import { configureCloudinary } from "./utils/cloudinary.js";
+
 
 dotenv.config();
 
 const PORT =  6000;
 
+configureCloudinary();
 connectDb()
   .then(() => {
     app.on("error", (err) => {

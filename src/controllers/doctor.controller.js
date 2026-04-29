@@ -80,18 +80,85 @@ export const createDoctor = async (req, res) => {
   }
 };
 
-// ================= GET ALL DOCTORS =================
-export const getallDoctors = async (req, res) => {
+
+export const updateDoctorProfile = async (req, res) => {
   try {
-    const doctors = await User.find({ role: "doctor" }).select("-password -refreshToken");
+    console.log("FILE:", req.file);
+
+    const { _id, user, profileImage, ...updateData } = req.body;
+
+    // ================= IMAGE UPLOAD =================
+    if (req.file?.path) {
+      const uploaded = await uploadCloudinary(req.file.path);
+
+      // 🔥 SAFE CHECK (IMPORTANT)
+      if (!uploaded) {
+        return res.status(500).json({
+          success: false,
+          message: "Image upload failed",
+        });
+      }
+      console.log("FILE:", req.file);
+      console.log("FILE PATH:", req.file?.path);
+
+      updateData.profileImage = uploaded.secure_url;
+    }
+
+    // ================= UPDATE DOCTOR =================
+    const doctor = await Doctor.findOneAndUpdate(
+      { user: req.user._id },
+      updateData,
+      { new: true, runValidators: true },
+    );
+
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: "Doctor profile not found",
+      });
+    }
 
     return res.status(200).json({
       success: true,
-      count: doctors.length,
-      doctors,
+      doctor,
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+// ================= GET ALL DOCTORS =================
+
+export const getallDoctors = async (req, res) => {
+  try {
+    const doctors = await Doctor.find().populate(
+      "user",
+      "name email profileImage role",
+    );
+
+    const formattedDoctors = doctors.map((doc) => ({
+      _id: doc._id,
+      name: doc.user.name,
+      email: doc.user.email,
+      profileImage: doc.user.profileImage,
+      role: doc.user.role,
+      specialty: doc.specialty,
+      experience: doc.experience,
+      fee: doc.fee,
+      hospital: doc.hospital,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      count: formattedDoctors.length,
+      doctors: formattedDoctors,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
   }
 };
 export const getDoctorById = async (req, res) => {
