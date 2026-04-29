@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["patient", "doctor", ],
+      enum: ["patient", "doctor"],
       default: "patient",
     },
 
@@ -60,6 +60,10 @@ const userSchema = new mongoose.Schema(
     },
     otpCode: String,
     otpExpire: Date,
+    resetAllowed: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );

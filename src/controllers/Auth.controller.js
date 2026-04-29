@@ -179,6 +179,7 @@ export const forgotPassword = async (req, res) => {
     });
   }
 };
+
 export const verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -194,18 +195,29 @@ export const verifyOtp = async (req, res) => {
         message: "Invalid or expired OTP",
       });
     }
+    user.resetAllowed = true;
+    // 🔥 MUST SAVE THIS
+    user.resetAllowed = true;
+    user.otpCode = undefined;
+    user.otpExpire = undefined;
+
+    await user.save({ validateBeforeSave: false });
+
+    console.log("RESET ALLOWED:", user.resetAllowed); // DEBUG
 
     return res.status(200).json({
       success: true,
-      message: "OTP verified",
+      message: "OTP verified successfully",
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 };
+
 export const resetPassword = async (req, res) => {
   try {
-    const { newPassword, confirmPassword } = req.body;
+    const { email, newPassword, confirmPassword } = req.body;
+
 
     if (newPassword !== confirmPassword) {
       return res.status(400).json({
@@ -213,16 +225,28 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ resetAllowed: true });
+    const user = await User.findOne({ email });
 
     if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    // 🔥 IMPORTANT CHECK (OTP verified or not)
+    if (!user.resetAllowed) {
       return res.status(401).json({
         message: "OTP not verified or session expired",
       });
     }
 
+    // 🔥 update password
     user.password = newPassword;
+
+    // cleanup security flags
     user.resetAllowed = false;
+    user.otpCode = undefined;
+    user.otpExpire = undefined;
 
     await user.save();
 
@@ -231,6 +255,9 @@ export const resetPassword = async (req, res) => {
       message: "Password reset successful",
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
   }
 };
