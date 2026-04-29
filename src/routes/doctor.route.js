@@ -1,7 +1,7 @@
 import express from "express";
 import {
   createDoctor,
-  getAllDoctors,
+  getallDoctors,
   getDoctorById,
   updateDoctor,
   deleteDoctor,
@@ -15,10 +15,10 @@ const router = express.Router();
 router.post("/create", upload.single("image"), createDoctor);
 
 
-router.get("/", getAllDoctors);
+router.get("/get-doctors", getallDoctors);
 
 
-router.get("/:id", getDoctorById);
+// router.get("/:id", getDoctorById);
 
 
 router.put("/:id", updateDoctor);

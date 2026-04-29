@@ -81,32 +81,30 @@ export const createDoctor = async (req, res) => {
 };
 
 // ================= GET ALL DOCTORS =================
-export const getAllDoctors = async (req, res) => {
+export const getallDoctors = async (req, res) => {
   try {
-    const doctors = await Doctor.find().populate(
-      "user",
-      "name email profileImage phone",
-    );
+    const doctors = await User.find({ role: "doctor" }).select("-password -refreshToken");
 
     return res.status(200).json({
       success: true,
+      count: doctors.length,
       doctors,
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 };
-
-// ================= GET SINGLE DOCTOR =================
 export const getDoctorById = async (req, res) => {
   try {
-    const doctor = await Doctor.findById(req.params.id).populate(
-      "user",
-      "name email profileImage phone",
-    );
+    const doctor = await User.findOne({
+      _id: req.params.id,
+      role: "doctor",
+    }).select("-password -refreshToken");
 
     if (!doctor) {
-      return res.status(404).json({ message: "Doctor not found" });
+      return res.status(404).json({
+        message: "Doctor not found",
+      });
     }
 
     return res.status(200).json({
@@ -114,9 +112,13 @@ export const getDoctorById = async (req, res) => {
       doctor,
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({
+      message: error.message,
+    });
   }
 };
+
+// ================= GET SINGLE DOCTOR =================
 
 // ================= UPDATE DOCTOR =================
 export const updateDoctor = async (req, res) => {
